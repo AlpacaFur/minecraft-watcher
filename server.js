@@ -35,16 +35,16 @@ function saveConfig() {
 }
 
 function dataToEmbed(error, data) {
-  console.log(data.samplePlayers)
   let embed = new MessageEmbed()
     .setAuthor(config.displayAddress || config.serverAddress, avatarURL)
     .setFooter("Last Updated:")
     .setTimestamp((new Date()).getTime())
+  let samplePlayers = data.samplePlayers || [];
   if (!error) {
     embed.setDescription(`Online - Running **${data.version}** \n\n` +
-                         `**Players (${data.samplePlayers.length}):** \n ` +
-                         data.samplePlayers.map(obj=>obj.name).join("\n") +
-                         (data.samplePlayers === 0 ? "No one is on :(": ""))
+                         `**Players (${samplePlayers.length}):** \n ` +
+                         samplePlayers.map(obj=>obj.name).join("\n") +
+                         (samplePlayers.length === 0 ? "*Nobody is on :(*": ""))
     embed.setColor("GREEN")
   }
   else {
