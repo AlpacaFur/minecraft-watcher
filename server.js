@@ -98,6 +98,12 @@ client.on('ready', ()=>{
   }
 })
 
+process.on('SIGINT', function() {
+    console.log("Destroying Client...");
+    client.destroy();
+    process.exit();
+});
+
 client.login(config.token)
   .catch(err=>{
     console.error(err);
