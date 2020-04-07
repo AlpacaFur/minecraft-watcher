@@ -41,7 +41,12 @@ function updateStatusIfNecessary(status) {
       status.version === previousStatus.version) return;
   previousStatus = status;
   if (status.online) {
-    client.user.setPresence({ activity: {name: `${status.players} players (${status.version})`}, status: "online" })
+    if (status.version == null) {
+      client.user.setPresence({ activity: {name: `Server starting up...`}, status: "idle" })
+    }
+    else {
+      client.user.setPresence({ activity: {name: `${status.players} players (${status.version})`}, status: "online" })
+    }
   }
   else {
     let now = new Date()
