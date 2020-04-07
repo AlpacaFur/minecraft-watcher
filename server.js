@@ -61,32 +61,40 @@ function dataToEmbed(error, data) {
     .setFooter("Last Updated:")
     .setTimestamp((new Date()).getTime())
   if (!error && data) {
-    let samplePlayers = data.samplePlayers || [];
-    embed.setDescription(`Online - Running **${data.version}** \n\n` +
-                         `**Players (${samplePlayers.length}):** \n ` +
-                         samplePlayers.map(obj=>obj.name).join("\n") +
-                         (samplePlayers.length === 0 ? "*Nobody is on :(*": ""))
-    embed.setColor("GREEN")
+    if (data.version === null) {
+      embed.setDescription(`Server starting up...`)
+      embed.setColor("#F5AC3A")
+    }
+    else {
+      let samplePlayers = data.samplePlayers || [];
+      embed.setDescription(`Online - Running **${data.version}** \n\n` +
+        `**Players (${samplePlayers.length}):** \n ` +
+        samplePlayers.map(obj=>obj.name).join("\n") +
+        (samplePlayers.length === 0 ? "*Nobody is on :(*": ""))
+        embed.setColor("GREEN")
+    }
   }
   else {
-    embed.setDescription("Server Offline!")
+    embed.setDescription(`Server Offline! Last online: ${previousStatus.timeOffline}`)
     embed.setColor("RED")
   }
   return embed;
 }
 
 function startPolling() {
-  setInterval(()=>{
-    minecraftPing(config.serverAddress, config.serverPort, (error, data)=>{
-      statusMessage.edit(dataToEmbed(error, data))
-      if (!error && data) {
-        updateStatusIfNecessary({online: true, players: (data.samplePlayers || []).length, version: data.version})
-      }
-      else {
-        updateStatusIfNecessary({online:false, players: 0, version: false})
-      }
-    })
-  }, 2000)
+  setInterval(pingAndEdit, 2000)
+}
+
+function pingAndEdit() {
+  minecraftPing(config.serverAddress, config.serverPort, (error, data)=>{
+    if (!error && data) {
+      updateStatusIfNecessary({online: true, players: (data.samplePlayers || []).length, version: data.version})
+    }
+    else {
+      updateStatusIfNecessary({online:false, players: 0, version: false})
+    }
+    statusMessage.edit(dataToEmbed(error, data))
+  })
 }
 
 function selectMessageAndStartPolling(messageId, channelId) {
@@ -95,6 +103,10 @@ function selectMessageAndStartPolling(messageId, channelId) {
       channel.messages.fetch(messageId)
         .then((message)=>{
           statusMessage = message;
+          let embed = new MessageEmbed()
+            .setDescription("Loading status...");
+          message.edit(embed)
+          pingAndEdit();
           startPolling();
         })
     })
@@ -105,8 +117,8 @@ if (!config.statusMessageIds) {
   client.on('message', (msg)=>{
     if (config.statusMessageIds) return;
     if (msg.content === config.prefix + "placemessage") {
-      let embed = new MessageEmbed();
-        embed.setDescription("Please wait...")
+      let embed = new MessageEmbed()
+        .setDescription("Please wait...");
       msg.channel.send(embed)
         .then((message)=>{
           config.statusMessageIds = [message.id, message.channel.id];
@@ -128,9 +140,24 @@ client.on('ready', ()=>{
 })
 
 process.on('SIGINT', function() {
+  if (statusMessage) {
+    let embed = new MessageEmbed()
+      .setDescription("Bot Offline!")
+      .setAuthor(config.displayAddress || config.serverAddress, avatarURL)
+      .setFooter("Offline at:")
+      .setTimestamp((new Date()).getTime())
+    statusMessage.edit(embed)
+      .then(()=>{
+        console.log("Destroying Client...");
+        client.destroy();
+        process.exit();
+      })
+  }
+  else {
     console.log("Destroying Client...");
     client.destroy();
     process.exit();
+  }
 });
 
 client.login(config.token)
