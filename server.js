@@ -50,7 +50,7 @@ function updateStatusIfNecessary(status) {
   }
   else {
     let now = new Date()
-    previousStatus.timeOffline = `${now.getHours()}:${now.getMinutes()}`
+    previousStatus.timeOffline = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
     client.user.setPresence({ activity: {name: `Offline! (at ${previousStatus.timeOffline})`}, status: "dnd" })
   }
 }
