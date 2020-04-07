@@ -2,11 +2,12 @@ const { Client, MessageEmbed } = require("discord.js");
 const fs = require("fs")
 const minecraftPing = require("minecraft-server-util")
 
+
 var avatarURL;
 var config;
 var statusMessage;
 
-var currentServerData = {};
+var previousStatus = {"online":false, "version":"00w00a", players: 0};
 
 const client = new Client()
 
@@ -34,6 +35,21 @@ function saveConfig() {
   fs.writeFileSync('./config.json', JSON.stringify(config, null, 2), 'utf8')
 }
 
+function updateStatusIfNecessary(status) {
+  if (status.online === previousStatus.online &&
+      status.players === previousStatus.players &&
+      status.version === previousStatus.version) return;
+  previousStatus = status;
+  if (status.online) {
+    client.user.setPresence({ activity: {name: `${status.players} players (${status.version})`}, status: "online" })
+  }
+  else {
+    let now = new Date()
+    previousStatus.timeOffline = `${now.getHours()}:${now.getMinutes()}`
+    client.user.setPresence({ activity: {name: `Offline! (at ${previousStatus.timeOffline})`}, status: "dnd" })
+  }
+}
+
 function dataToEmbed(error, data) {
   let embed = new MessageEmbed()
     .setAuthor(config.displayAddress || config.serverAddress, avatarURL)
@@ -58,6 +74,12 @@ function startPolling() {
   setInterval(()=>{
     minecraftPing(config.serverAddress, config.serverPort, (error, data)=>{
       statusMessage.edit(dataToEmbed(error, data))
+      if (!error && data) {
+        updateStatusIfNecessary({online: true, players: (data.samplePlayers || []).length, version: data.version})
+      }
+      else {
+        updateStatusIfNecessary({online:false, players: 0, version: false})
+      }
     })
   }, 2000)
 }
@@ -93,6 +115,8 @@ if (!config.statusMessageIds) {
 client.on('ready', ()=>{
   console.log("Bot online!");
   avatarURL = client.user.avatarURL()
+  client.user.setPresence({ activity: {name: 'Loading...'}, status: "idle" })
+
   if (config.statusMessageIds) {
     selectMessageAndStartPolling(config.statusMessageIds[0],config.statusMessageIds[1]);
   }
