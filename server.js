@@ -39,8 +39,8 @@ function dataToEmbed(error, data) {
     .setAuthor(config.displayAddress || config.serverAddress, avatarURL)
     .setFooter("Last Updated:")
     .setTimestamp((new Date()).getTime())
-  let samplePlayers = data.samplePlayers || [];
-  if (!error) {
+  if (!error && data) {
+    let samplePlayers = data.samplePlayers || [];
     embed.setDescription(`Online - Running **${data.version}** \n\n` +
                          `**Players (${samplePlayers.length}):** \n ` +
                          samplePlayers.map(obj=>obj.name).join("\n") +
@@ -76,7 +76,8 @@ function selectMessageAndStartPolling(messageId, channelId) {
 
 if (!config.statusMessageIds) {
   client.on('message', (msg)=>{
-    if (msg.content === "m!placemessage") {
+    if (config.statusMessageIds) return;
+    if (msg.content === config.prefix + "placemessage") {
       let embed = new MessageEmbed();
         embed.setDescription("Please wait...")
       msg.channel.send(embed)
