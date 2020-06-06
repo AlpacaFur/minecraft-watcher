@@ -24,12 +24,6 @@ if (!config.serverAddress) {
   fatalError("No server address provided!")
 }
 
-function reverseOrDont(string) {
-  return config.reverse ? string.split('').reverse().join('') : string;
-}
-console.log(reverseOrDont("gamer"))
-
-
 function fatalError(string) {
   console.log()
   console.warn("\x1b[31m"+ string +"\x1b[0m")
@@ -48,40 +42,40 @@ function updateStatusIfNecessary(status) {
   previousStatus = status;
   if (status.online) {
     if (status.version == null) {
-      client.user.setPresence({ activity: {name: reverseOrDont(`Server starting up...`)}, status: "idle" })
+      client.user.setPresence({ activity: {name: `Server starting up...`}, status: "idle" })
     }
     else {
-      client.user.setPresence({ activity: {name: reverseOrDont(`${status.players} players (${status.version})`)}, status: "online" })
+      client.user.setPresence({ activity: {name: `${status.players} players (${status.version})`}, status: "online" })
     }
   }
   else {
     let now = new Date()
     previousStatus.timeOffline = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
-    client.user.setPresence({ activity: {name: reverseOrDont(`Offline! (at ${previousStatus.timeOffline})`)}, status: "dnd" })
+    client.user.setPresence({ activity: {name: `Offline! (at ${previousStatus.timeOffline})`}, status: "dnd" })
   }
 }
 
 function dataToEmbed(error, data) {
   let embed = new MessageEmbed()
-    .setAuthor(reverseOrDont(config.displayAddress || config.serverAddress), avatarURL)
-    .setFooter(reverseOrDont("Last Updated:"))
+    .setAuthor(config.displayAddress || config.serverAddress, avatarURL)
+    .setFooter("Last Updated:")
     .setTimestamp((new Date()).getTime())
   if (!error && data) {
     if (data.version === null) {
-      embed.setDescription(reverseOrDont(`Server starting up...`))
+      embed.setDescription(`Server starting up...`)
       embed.setColor("#F5AC3A")
     }
     else {
       let samplePlayers = data.samplePlayers || [];
-      embed.setDescription(reverseOrDont(`Online - Running **${data.version}** \n\n` +
+      embed.setDescription(`Online - Running **${data.version}** \n\n` +
         `**Players (${samplePlayers.length}):** \n ` +
         samplePlayers.map(obj=>obj.name).join("\n") +
-        (samplePlayers.length === 0 ? "*Nobody is on :(*": "")))
+        (samplePlayers.length === 0 ? "*Nobody is on :(*": ""))
         embed.setColor("GREEN")
     }
   }
   else {
-    embed.setDescription(reverseOrDont(`Server Offline! Last online: ${previousStatus.timeOffline}`))
+    embed.setDescription(`Server Offline! Last online: ${previousStatus.timeOffline}`)
     embed.setColor("RED")
   }
   return embed;
@@ -110,7 +104,7 @@ function selectMessageAndStartPolling(messageId, channelId) {
         .then((message)=>{
           statusMessage = message;
           let embed = new MessageEmbed()
-            .setDescription(reverseOrDont("Loading status..."));
+            .setDescription("Loading status...");
           message.edit(embed)
           pingAndEdit();
           startPolling();
@@ -122,9 +116,9 @@ function selectMessageAndStartPolling(messageId, channelId) {
 if (!config.statusMessageIds) {
   client.on('message', (msg)=>{
     if (config.statusMessageIds) return;
-    if (msg.content === config.prefix + reverseOrDont("placemessage")) {
+    if (msg.content === config.prefix + "placemessage") {
       let embed = new MessageEmbed()
-        .setDescription(reverseOrDont("Please wait..."));
+        .setDescription("Please wait...");
       msg.channel.send(embed)
         .then((message)=>{
           config.statusMessageIds = [message.id, message.channel.id];
@@ -138,7 +132,7 @@ if (!config.statusMessageIds) {
 client.on('ready', ()=>{
   console.log("Bot online!");
   avatarURL = client.user.avatarURL()
-  client.user.setPresence({ activity: {name: reverseOrDont('Loading...')}, status: "idle" })
+  client.user.setPresence({ activity: {name: 'Loading...'}, status: "idle" })
 
   if (config.statusMessageIds) {
     selectMessageAndStartPolling(config.statusMessageIds[0],config.statusMessageIds[1]);
@@ -148,24 +142,23 @@ client.on('ready', ()=>{
 process.on('SIGINT', function() {
   if (statusMessage) {
     let embed = new MessageEmbed()
-      .setDescription(reverseOrDont("Bot Offline!"))
+      .setDescription("Bot Offline!")
       .setAuthor(config.displayAddress || config.serverAddress, avatarURL)
-      .setFooter(reverseOrDont("Offline at:"))
+      .setFooter("Offline at:")
       .setTimestamp((new Date()).getTime())
     statusMessage.edit(embed)
       .then(()=>{
-        console.log(reverseOrDont("Destroying Client..."));
+        console.log("Destroying Client...");
         client.destroy();
         process.exit();
       })
   }
   else {
-    console.log(reverseOrDont("Destroying Client..."));
+    console.log("Destroying Client...");
     client.destroy();
     process.exit();
   }
 });
-
 
 client.login(config.token)
   .catch(err=>{
