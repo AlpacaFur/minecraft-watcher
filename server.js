@@ -2,7 +2,7 @@ const { Client, MessageEmbed } = require("discord.js")
 const fs = require('fs');
 const minecraftPing = require("minecraft-server-util");
 
-const client = new Client();
+const client = new Client({messageCacheMaxSize:0});
 
 var config;
 var getMessage;
