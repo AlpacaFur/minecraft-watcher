@@ -93,7 +93,13 @@ function pingAndEdit() {
     else {
       updateStatusIfNecessary({online:false, players: 0, version: false})
     }
-    statusMessage.edit(dataToEmbed(error, data))
+    client.channels.fetch(config.statusMessageIds[1])
+      .then((channel)=>{
+        channel.messages.fetch(config.statusMessageIds[0])
+          .then((message)=>{
+            message.edit(dataToEmbed(error, data))
+          })
+      })
   })
 }
 
@@ -102,7 +108,6 @@ function selectMessageAndStartPolling(messageId, channelId) {
     .then((channel)=>{
       channel.messages.fetch(messageId)
         .then((message)=>{
-          statusMessage = message;
           let embed = new MessageEmbed()
             .setDescription("Loading status...");
           message.edit(embed)
@@ -140,20 +145,26 @@ client.on('ready', ()=>{
 })
 
 process.on('SIGINT', function() {
-  if (statusMessage) {
+  try {
     let embed = new MessageEmbed()
       .setDescription("Bot Offline!")
       .setAuthor(config.displayAddress || config.serverAddress, avatarURL)
       .setFooter("Offline at:")
       .setTimestamp((new Date()).getTime())
-    statusMessage.edit(embed)
-      .then(()=>{
-        console.log("Destroying Client...");
-        client.destroy();
-        process.exit();
+    client.channels.fetch(config.statusMessageIds[1])
+      .then((channel)=>{
+        channel.messages.fetch(config.statusMessageIds[0])
+          .then((message)=>{
+            message.edit(embed)
+              .then(()=>{
+                console.log("Destroying Client...");
+                client.destroy();
+                process.exit();
+              })
+          })
       })
   }
-  else {
+  catch {
     console.log("Destroying Client...");
     client.destroy();
     process.exit();
